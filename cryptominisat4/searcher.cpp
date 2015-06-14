@@ -1527,7 +1527,7 @@ lbool Searcher::burst_search(const bool random)
     if (conf.verbosity >= 2) {
         cout
         << "c "
-        << conf.burst_search_len << "-long burst search "
+        << params.conflictsToDo << "-long burst search "
         << " learnt units:" << (stats.learntUnits - numUnitsUntilNow)
         << " learnt bins: " << (stats.learntBins - numBinsUntilNow)
         << solver->conf.print_times(time_used)
