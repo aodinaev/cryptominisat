@@ -1489,7 +1489,7 @@ void Searcher::resetStats()
     lastCleanZeroDepthAssigns = trail.size();
 }
 
-lbool Searcher::burst_search()
+lbool Searcher::burst_search(const bool random)
 {
     const double myTime = cpuTime();
     const size_t numUnitsUntilNow = stats.learntUnits;
@@ -1503,12 +1503,15 @@ lbool Searcher::burst_search()
     update_polarity_and_activity = false;
 
     //Set burst config
-    conf.random_var_freq = 1;
-    conf.polarity_mode = PolarityMode::polarmode_rnd;
+    if (random) {
+        conf.random_var_freq = 1;
+        conf.polarity_mode = PolarityMode::polarmode_rnd;
+    }
 
     //Do burst
     params.clear();
     params.conflictsToDo = conf.burst_search_len;
+    if (!random) params.conflictsToDo *= 2;
     params.rest_type = Restart::never;
     lbool status = search();
 
@@ -1901,11 +1904,23 @@ lbool Searcher::solve(const uint64_t _maxConfls)
     resetStats();
     num_red_cls_reducedb = count_num_red_cls_reducedb();
     lbool status = l_Undef;
+
+    //Burst random
     if (conf.burst_search_len > 0) {
         restore_order_heap();
         assert(solver->check_order_heap_sanity());
         setup_restart_print();
-        status = burst_search();
+        status = burst_search(true);
+        if (status != l_Undef)
+            goto end;
+    }
+
+    //Burst false
+    if (conf.burst_search_len > 0) {
+        restore_order_heap();
+        assert(solver->check_order_heap_sanity());
+        setup_restart_print();
+        status = burst_search(false);
         if (status != l_Undef)
             goto end;
     }
